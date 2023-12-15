@@ -8,7 +8,7 @@ dotenv.config();
 console.log(process.env);
 //const express  = require('express');
 const app = express();
-const port = 4000 ;
+const port = process.env.PORT ;
 
 // Mongodb connection
 //mongodb+srv://Charumathi:<password>@cluster0.paeymla.mongodb.net/?retryWrites=true&w=majority
@@ -145,5 +145,32 @@ app.post("/movies",express.json(),async function(req,res){
     const movie = await client.db("b41wd").collection("movies").insertMany(data);
     res.send(movie);
 });
+
+//api creation for Delete
+app.delete("/movies/:id",async function(req,res){
+   const {id} = req.params;
+   try{
+   const result  = await client.db("b41wd")
+   .collection("movies")
+   .deleteOne({id:id});
+   console.log(result);
+   result.deletedCount>0
+    ? res.send({message:"Movie was deleted sucessfully"})
+    :res.status(404).send({message:"Movie not found"});
+   }
+   catch(err){
+    console.log(err);
+   }
+})
+
+//api creation for update
+app.put("/movies/:id",express.json(),async function(req,res){
+   const data = req.body;
+   const {id} = req.params;
+   const movie = await client.db("b41wd")
+   .collection("movies")
+   .updateOne({id:id},{$set:data});
+   movie ? res.send({message:"Movie updated successfully"}): res.status(404).send({message:"Movie not updated successfully"}); 
+})
 
 app.listen(port,()=>console.log(`the server started in: ${port} ✨ ✨`));
