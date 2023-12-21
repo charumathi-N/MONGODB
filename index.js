@@ -1,5 +1,8 @@
 import express, { response } from 'express';
+import moviesRouter from "./routes/movies.route.js";
+import usersRouter from "./routes/users.route.js"
 import { MongoClient } from 'mongodb';
+import cors from 'cors';
 
 //Hide the Mongourl
 import * as dotenv from 'dotenv';
@@ -8,6 +11,7 @@ dotenv.config();
 console.log(process.env);
 //const express  = require('express');
 const app = express();
+app.use(cors());
 const port = process.env.PORT ;
 
 // Mongodb connection
@@ -17,6 +21,7 @@ const MONGO_URL = process.env.MONGO_URL;
 const client = new MongoClient(MONGO_URL)
 await client.connect();
 console.log("Mongo is connected !!!");
+
 
 app.use(express.json());
 // //movies data
@@ -121,59 +126,52 @@ app.use(express.json());
 app.get("/", async function(req,res){
     res.send("Welcome to Node.js server!");
 })
-app.get("/movies",async function(req,res){
-    const movies = await client 
-      .db("b41wd")
-      .collection("movies")
-      .find({})
-      .toArray();
-    console.log(movies);
-    res.send(movies);
+
+app.use("/movies",moviesRouter);
+app.use("/users",usersRouter);
+
+//mobiles - > mobiles data
+
+const mobiles = 
+    [
+        {
+          "model": "OnePlus 9 5G",
+          "img": "https://m.media-amazon.com/images/I/61fy+u9uqPL._SX679_.jpg",
+          "company": "Oneplus"
+        },
+        {
+          "model": "Iphone 13 mini",
+          "img": "https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/iphone-13-mini-blue-select-2021?wid=470&hei=556&fmt=jpeg&qlt=95&.v=1645572315986",
+          "company": "Apple"
+        },
+        {
+          "model": "Samsung s21 ultra",
+          "img": "https://m.media-amazon.com/images/I/81kfA-GtWwL._SY606_.jpg",
+          "company": "Samsung"
+        },
+        {
+          "model": "Xiomi mi 11",
+          "img": "https://m.media-amazon.com/images/I/51K4vNxMAhS._AC_SX522_.jpg",
+          "company": "Xiomi"
+        }
+      ]
+      
+app.get("/mobiles",async function(req,res){
+    res.send(mobiles);
 })
 
-//get the movie details by using id - Get method
-app.get("/movies/:id",async function(req,res){
-    const {id} = req.params;
-    console.log(id);
-    const movie = await client.db("b41wd").collection("movies").findOne({id:id});
-    //const data = movies.find((x)=>x.id==req.params.id);
-    movie ? res.send(movie): res.status(404).send({message:"Movie not found"}); 
-});
+async function CreateMobiles(data) {
+    console.log(data);
+    return await client.db("b41wd").collection("mobiles").insertMany(data);
+}
 
-//middleware - express.json()
-//api creation for post method
-app.post("/movies",express.json(),async function(req,res){
+app.post("/mobiles",express.json(),async function(req,res){
     const data = req.body;
-    // console.log(data);
-    const movie = await client.db("b41wd").collection("movies").insertMany(data);
-    res.send(movie);
+    const mobiles = await CreateMobiles(data);
+    console.log(mobiles)
+    res.send(mobiles);
 });
-
-//api creation for Delete
-app.delete("/movies/:id",async function(req,res){
-   const {id} = req.params;
-   try{
-   const result  = await client.db("b41wd")
-   .collection("movies")
-   .deleteOne({id:id});
-   console.log(result);
-   result.deletedCount>0
-    ? res.send({message:"Movie was deleted sucessfully"})
-    :res.status(404).send({message:"Movie not found"});
-   }
-   catch(err){
-    console.log(err);
-   }
-})
-
-//api creation for update
-app.put("/movies/:id",express.json(),async function(req,res){
-   const data = req.body;
-   const {id} = req.params;
-   const movie = await client.db("b41wd")
-   .collection("movies")
-   .updateOne({id:id},{$set:data});
-   movie ? res.send({message:"Movie updated successfully"}): res.status(404).send({message:"Movie not updated successfully"}); 
-})
 
 app.listen(port,()=>console.log(`the server started in: ${port} ✨ ✨`));
+export {client};
+
